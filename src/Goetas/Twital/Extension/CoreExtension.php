@@ -7,6 +7,7 @@ use Goetas\Twital\Twital;
 use Goetas\Twital\EventSubscriber\DOMMessSubscriber;
 use Goetas\Twital\EventSubscriber\CustomNamespaceRawSubscriber;
 use Goetas\Twital\EventSubscriber\FixHtmlEntitiesInExpressionSubscriber;
+use Goetas\Twital\EventSubscriber\ContextAwareEscapingSubscriber;
 
 /**
  *
@@ -22,12 +23,8 @@ class CoreExtension extends AbstractExtension
             new CustomNamespaceRawSubscriber(array(
                 't' => Twital::NS
             )),
-            new FixHtmlEntitiesInExpressionSubscriber()
-            /*
-            new CustomNamespaceSubscriber(array(
-                't' => Twital::NS
-            ))
-            */
+            new FixHtmlEntitiesInExpressionSubscriber(),
+            new ContextAwareEscapingSubscriber()
         );
     }
 
