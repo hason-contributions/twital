@@ -24,7 +24,7 @@ class CoreExtension extends AbstractExtension
                 't' => Twital::NS
             )),
             new FixHtmlEntitiesInExpressionSubscriber(),
-            new ContextAwareEscapingSubscriber()
+            //new ContextAwareEscapingSubscriber()
         );
     }
 

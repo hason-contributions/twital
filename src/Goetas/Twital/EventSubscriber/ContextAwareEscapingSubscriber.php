@@ -1,55 +1,52 @@
 <?php
 namespace Goetas\Twital\EventSubscriber;
 
+use Goetas\Twital\EventDispatcher\SourceEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Goetas\Twital\EventDispatcher\TemplateEvent;
-use Goetas\Twital\Helper\DOMHelper;
 
 /**
  *
  * @author Asmir Mustafic <goetas@gmail.com>
+ * @author Martin Hasoň <martin.hason@gmail.com>
  *
  */
 class ContextAwareEscapingSubscriber implements EventSubscriberInterface
 {
-
-    const REGEX_STRING = '"[^"\\\\]*(?:\\\\.[^"\\\\]*)*"|\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*\'';
-
     public static function getSubscribedEvents()
     {
         return array(
-            'compiler.pre_dump' => 'addEscpaing'
+            'compiler.pre_dump' => 'addEscaping',
+            'compiler.post_dump' => 'addRootEscaping',
         );
     }
 
-    public function addEscpaing(TemplateEvent $event)
+    public function addEscaping(TemplateEvent $event)
     {
-        $regex = '{' . preg_quote('{{') . '((' . self::REGEX_STRING . '|[^"\']*)+)' . preg_quote('}}') . '}siuU';
-        $placeholder = array('[_TWITAL_[', ']_TWITAL_]');
-
         $doc = $event->getTemplate()->getDocument();
 
         $xp = new \DOMXPath($doc);
 
-        // js escaping
-        $res = $xp->query("//style[not(@type) or @type = 'text/css']/text()[contains(., '{{') and contains(., '}}')]"); // take care about namespaces
-        foreach ($res as $node) {
-            $node->data = preg_replace($regex, "{{\\1 | escape('css') }}", $node->data);
-        }
-
         // css escaping
-        $res = $xp->query("//script[not(@type) or @type = 'text/javascript']/text()[contains(., '{{') and contains(., '}}')]"); // take care about namespaces
-        foreach ($res as $node) {
-            $node->data = preg_replace($regex, "{{\\1 | escape('js') }}", $node->data);
+        foreach ($xp->query("//style[not(@type) or @type = 'text/css']/text()") as $node) {
+            $node->data = '{% autoescape \'css\' %}'.$node->data.'{% endautoescape %}';
         }
 
-        // url escaping
-        $res = $xp->query("//a/@href[contains(., '{{') and contains(., '}}')]|//area/@href[contains(., '{{') and contains(., '}}')]|//link/@href[contains(., '{{') and contains(., '}}')]|//link/@href[contains(., '{{') and contains(., '}}')]|//img/@src[contains(., '{{') and contains(., '}}')]|//script/@src[contains(., '{{') and contains(., '}}')]"); // take care about namespaces
-        foreach ($res as $node) {
-
-            $isFullValue = preg_match('{^' . preg_quote('{{') . '((' . self::REGEX_STRING . '|[^"\']*)+)' . preg_quote('}}') . '$}siuU', str_replace($placeholder, '', $node->value));
-
-            $node->value = preg_replace($regex, $isFullValue?"{{\\1 | escape('html_attr') }}":"{{\\1 | escape('url') }}", $node->value);
+        // js escaping
+        foreach ($xp->query("//script[not(@type) or @type = 'text/javascript']/text()") as $node) {
+            $node->data = '{% autoescape \'js\' %}'.$node->data.'{% endautoescape %}';
         }
+
+        // html attribute escaping
+        foreach ($xp->query("//@*") as $node) {
+            $node->value = '{% autoescape \'html_attr\' %}'.$node->value.'{% endautoescape %}';
+        }
+    }
+
+    public function addRootEscaping(SourceEvent $event)
+    {
+        $source = $event->getTemplate();
+
+        $event->setTemplate('{% autoescape \'html\' %}'.$source.'{% endautoescape %}');
     }
 }
