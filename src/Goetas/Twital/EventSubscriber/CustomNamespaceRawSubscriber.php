@@ -14,7 +14,8 @@ class CustomNamespaceRawSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return array(
-            'compiler.pre_load' => 'addCustomNamespace'
+            'compiler.pre_load' => 'addCustomNamespace',
+            'compiler.post_dump' => 'removeCustomNamespace',
         );
     }
 
@@ -31,8 +32,8 @@ class CustomNamespaceRawSubscriber implements EventSubscriberInterface
 
     public function addCustomNamespace(SourceEvent $event)
     {
-        $xml = $event->getTemplate();
-        $mch = null;
+        $source = $event->getTemplate();
+        /*$mch = null;
         if (preg_match('~<(([a-z0-9\-_]+):)?([a-z0-9\-_]+)~i', $xml, $mch, PREG_OFFSET_CAPTURE)) {
             $addPos = $mch[0][1] + strlen($mch[0][0]);
             foreach ($this->customNamespaces as $prefix => $ns) {
@@ -42,6 +43,24 @@ class CustomNamespaceRawSubscriber implements EventSubscriberInterface
             }
 
             $event->setTemplate($xml);
+        }*/
+        $xml = '<twital';
+        foreach ($this->customNamespaces as $prefix => $ns) {
+            $xml .= ' xmlns:' . $prefix . ' = "' . $ns . '"';
         }
+        $xml .= '>' . $source . '</twital>';
+        $event->setTemplate($xml);
+    }
+
+    public function removeCustomNamespace(SourceEvent $event)
+    {
+        $source = $event->getTemplate();
+
+        foreach ($this->customNamespaces as $prefix => $ns) {
+            $xml .= ' xmlns:' . $prefix . ' = "' . $ns . '"';
+        }
+        $source = preg_replace('#<(.*) xmlns:[a-zA-Z0-9]+=("|\')' . Twital::NS . '("|\')(.*)>#m', "<\\1\\4>", $source);
+
+        $event->setTemplate($source);
     }
 }

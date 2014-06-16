@@ -31,7 +31,7 @@ class DOMMessSubscriber implements EventSubscriberInterface
 
     public function removeNamespaces(SourceEvent $event)
     {
-        $event->setTemplate(preg_replace('#<(.*) xmlns:[a-zA-Z0-9]+=("|\').*?' . Twital::NS . '.*?("|\')(.*)>#m', "<\\1\\4>", $event->getTemplate()));
+        //$event->setTemplate(preg_replace('#<(.*) xmlns:[a-zA-Z0-9]+=("|\')' . Twital::NS . '("|\')(.*)>#m', "<\\1\\4>", $event->getTemplate()));
     }
 
     public function removeCdata(SourceEvent $event)
